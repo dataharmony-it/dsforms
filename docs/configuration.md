@@ -16,6 +16,7 @@ SMTP — it just has nowhere to send the notification.
 | `SMTP_FROM` | For email | — | From address, e.g. `DSForms <noreply@example.com>` |
 | `LISTEN_ADDR` | No | `:8080` | HTTP listen address |
 | `BASE_URL` | No | — | Public URL. Sets the `Secure` cookie flag, builds links in emails, and acts as one of the origins `_redirect` may point at. |
+| `CORS_ORIGIN` | No | — | Origins allowed to read responses from the public submit endpoints `/f/{formID}` and `/w/{waitlistID}`, comma-separated for several, e.g. `https://example.com,https://www.example.com`. Empty sends no CORS headers. |
 | `DB_PATH` | No | `/data/dsforms.db` | SQLite database path |
 | `SPAM_THRESHOLD` | No | `6` | Score at or above which a submission is held for review. Clamped to 1–20; `0` or unset means the default. Each form can override it in its settings. |
 | `DIGEST_TO` | No | — | Address for the daily quarantine digest. Empty disables it. |

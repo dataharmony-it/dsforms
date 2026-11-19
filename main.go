@@ -305,6 +305,44 @@ func newRouter(healthy healthCheck, templates map[string]*template.Template) *ch
 		})
 	})
 
+	// CORS for the public submission endpoints only. A static site on another
+	// origin posts to /f/{formID} and /w/{waitlistID}; without this header the
+	// browser hides the response, so the site cannot tell a 400 from a success.
+	// Off unless CORS_ORIGIN names at least one; comma-separated for several.
+	// The header is echoed per request rather than sent as the raw list,
+	// because Access-Control-Allow-Origin accepts one origin, not a list.
+	if raw := os.Getenv("CORS_ORIGIN"); raw != "" {
+		allowed := make(map[string]bool)
+		for _, o := range strings.Split(raw, ",") {
+			if o = strings.TrimSpace(o); o != "" {
+				allowed[o] = true
+			}
+		}
+		r.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if !strings.HasPrefix(r.URL.Path, "/f/") && !strings.HasPrefix(r.URL.Path, "/w/") {
+					next.ServeHTTP(w, r)
+					return
+				}
+				origin := r.Header.Get("Origin")
+				if !allowed[origin] {
+					next.ServeHTTP(w, r)
+					return
+				}
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Add("Vary", "Origin")
+				if r.Method == http.MethodOptions {
+					w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+					w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Accept")
+					w.Header().Set("Access-Control-Max-Age", "86400")
+					w.WriteHeader(http.StatusNoContent)
+					return
+				}
+				next.ServeHTTP(w, r)
+			})
+		})
+	}
+
 	// Request body size limit (64KB), with two exemptions.
 	//
 	// The cap is applied here, before any route runs, so a route that needs a

@@ -1,10 +1,14 @@
 services:
   dsforms:
+    container_name: dsforms
     build: .
     restart: unless-stopped
-    ports:
-      - "8080:8080"
+    env_file: .env
+    expose:
+      - 8080
     volumes:
-      - ./data:/data
-    env_file:
-      - .env
+      - dsforms_data:/data
+
+volumes:
+  dsforms_data:
+    name: dsforms_data
